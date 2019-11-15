@@ -1,0 +1,19 @@
+alienv enter O2/latest
+
+Minimal test:
+
+1) generation
+
+
+o2-sim -n 10 -m MCH  -g fwmugen
+
+2) digitisation (MC-to-MC embedding)
+
+o2-sim-digitizer-workflow --simFile o2sim.root --simFileS o2sim.root -b
+
+3) tree creation with MClabels
+
+root -b
+
+.x Digits_O2.C+
+
