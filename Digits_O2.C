@@ -11,12 +11,12 @@ using namespace std;
 #include "MCHSimulation/GeometryTest.h"
 #include "SimulationDataFormat/MCCompLabel.h"
 #include "SimulationDataFormat/MCTruthContainer.h"
-#include "MCHSimulation/Digit.h"
+#include "MCHBase/Digit.h"
 #include "MCHMappingInterface/Segmentation.h"
 #include "TGeoManager.h"
 
 using namespace o2::mch;
-
+using namespace o2::dataformats;
 
 
 void retrieveDigits(TTree* chain,
@@ -32,8 +32,8 @@ void retrieveDigits(TTree* chain,
   br->SetAddress(&digits);
   br->GetEntry(entryID);
 }
-
-/*void retrieveMCTruthContainer(TTree* chain,
+/*
+void retrieveMCTruthContainer(TTree* chain,
                   const char* brname,
                   int entryID,
 			      o2::dataformats::MCTruthContainer* labels)
@@ -45,8 +45,8 @@ void retrieveDigits(TTree* chain,
   }
   br->SetAddress(&labels);
   br->GetEntry(entryID);
-  }*/
-
+}
+*/
 
 Long64_t retrieveEntries(TTree* chain,
                   const char* brname){
@@ -71,7 +71,6 @@ struct GEOMETRY {
     }
   }
 };
-
 
 
 std::map<int, int> createDEMap()
@@ -115,19 +114,19 @@ void Digits_O2(){
   TTree * alio2 = (TTree*)filo2->Get("o2sim");  
   
   std::vector<Digit> digits;
-  // cout <<"digits "<< digits << endl;
+  cout <<"digits "<< &digits << endl;
   //o2::dataformats::MCTruthContainer container; //dataformats
-  o2::dataformats::MCTruthContainer<o2::MCCompLabel>* container = nullptr;//new o2::dataformats::MCTruthContainer<o2::MCCompLabel>();
+  o2::dataformats::MCTruthContainer<o2::MCCompLabel>* container;//new o2::dataformats::MCTruthContainer<o2::MCCompLabel>();
   
-  //  cout <<"container " << container << endl;
+  cout <<"container " << &container << endl;
   alio2->SetBranchAddress("MCHMCLabels", &container);
-  alio2->GetEntry(0);
+  alio2->GetEntry(1);
   
 
-  const auto& labels = container->getLabels(0);
+  // const auto& labels = container->getLabels(0);
   //  o2::MCCompLabel labtest = labels[0];
 
-  //  cout <<"test 4never " << endl;
+  cout <<"test 4never " << endl;
   
   TFile* o2file = TFile::Open("o2file.root","recreate");
   
@@ -176,9 +175,11 @@ void Digits_O2(){
   Long64_t nentries = retrieveEntries(alio2, (const char*) "MCHDigit");
   
   // alio2->GetEntry(0);
-  // cout <<"alio2->GetEntry(0) " << alio2->GetEntry(0) << endl;
-  // cout <<"digits " << digits->size() << endl;
+  cout <<"alio2->GetEntry(0) " << alio2->GetEntry(0) << endl;
+  //  cout << "alio2->Getentry(1) " << alio2->GetEntry(1) << endl;
+  //  cout <<"digits size " << digits.size() << endl;
   //  int size = digits->size();
+  cout <<"nentries " << nentries << endl;
   for(int j =0; j< nentries; ++j ){
 
     
@@ -187,33 +188,52 @@ void Digits_O2(){
     //    retrieveMCTruthContainer(alio2, (const char*) "MCHMCLabels", j, &container);
     
     
-    int size = digits.size();
-    //   int sizelab = container.getSize();
-    //    cout <<"size Truth COntainer " << sizelab << endl;
-    for(int i = 0; i< size; ++i) {
+    int digitsize = digits.size();
+    cout <<"size " <<digitsize << endl;
+    int sizelab = container->getNElements();
+    cout <<"size Truth COntainer " << sizelab << endl;
+    for(int i = 0; i< digitsize; ++i) {
       //TODO add event-id, not there, time stamp, check what I wrote inside...as time
       //get cathode type per digit! via Segmentation: isBendingPad bool Ausgabetyp!!
       //  auto time = event_time + hit.GetTime(); hit input distribution time seems to be a constant
       //i.e. in order to combine one "cluster" need to look for all digits having the same time stamp, belonging to the same station and to the same cathode type
+      //cout <<"i " << i << endl;
 
+      int track_id = 0;
+      int src_id = 0;
+      int src_id2 =0;
+      int size =0;
+      int evtid =0;
+      
+      //gsl::span<const o2::MCCompLabel>
+      //o2::MCCompLabel lab = container->getElement(i); //works but is related to wrong index
       const auto&  labels_for_i = container->getLabels(i);
-      o2::MCCompLabel lab = labels_for_i[0];
-
-      //cout << "&lab " << &lab << endl;
-      //cout <<"labels_for_i " << labels_for_i  << endl;
-      int evtid = lab.getEventID();
-      int track_id = lab.getTrackID();
-      int src_id = lab.getSourceID();
-      int src_id2 = -1000;
-      int size = labels_for_i.size();
-      if(size>1){
-	cout <<"TEST more than one lable " << endl;
-	o2::MCCompLabel lab2 = labels_for_i[1];
-	eventid2= lab2.getEventID();
-	trackid2 = lab2.getTrackID();
-	src_id2 = lab2.getSourceID();
-      }
-      //TODO also write trackID!
+      cout << "labels_for_i.size() " << labels_for_i.size() << endl;;
+      //  cout <<"labels_for_i " << &labels_for_i  << endl;
+      o2::MCCompLabel lab;
+      size = labels_for_i.size();
+      if(size>0)
+	{
+	  lab = labels_for_i[0]; //this is the bad line
+	  evtid = lab.getEventID();
+	  cout <<"evtid " << evtid << endl;
+	  track_id = lab.getTrackID();
+	  src_id = lab.getSourceID();
+	  src_id2 = -1000;
+	  //Summary: number of digits -> fine
+	  //number of labels in cout before writing fine
+	  
+	  
+	  cout <<"size labels per digit i " << size << endl;
+	  if(size>1){
+	    cout <<"TEST more than one lable " << endl;
+	    o2::MCCompLabel lab2 = labels_for_i[1];
+	    eventid2= lab2.getEventID();
+	    trackid2 = lab2.getTrackID();
+	    src_id2 = lab2.getSourceID();
+	  }
+	}
+      
       padid_int = digits.at(i).getPadID();
       adc_int   = digits.at(i).getADC();
       time_int  = digits.at(i).getTimeStamp();
