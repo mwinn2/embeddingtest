@@ -277,7 +277,7 @@ void Digits_O2(){
       bending = isbending;
       srcid = src_id;
       srcid2 = src_id2;
-      
+      cout <<"eventid " << eventid << endl;
       o2out.Fill();
     }
 
